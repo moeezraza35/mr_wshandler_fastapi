@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>WebSocket Tester – with dedicated Receive Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebSocket Tester – Client ID & Rooms</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -49,7 +50,7 @@
       align-items: center;
       margin-bottom: 1rem;
     }
-    input, select, button {
+    input, button {
       padding: 0.5rem;
       font-size: 0.9rem;
       border: 1px solid #ccc;
@@ -80,6 +81,7 @@
       padding-left: 0.5rem;
       margin: 0.5rem 0;
       background: #e9f5e9;
+      word-break: break-all;
     }
     .log-item {
       border-bottom: 1px solid #eee;
@@ -87,13 +89,18 @@
       color: #495057;
     }
     hr { margin: 1rem 0; }
-    label { font-weight: 600; width: 80px; }
+    label { font-weight: 600; width: 100px; }
+    .small-note {
+      font-size: 0.8rem;
+      color: #6c757d;
+      margin-left: 0.5rem;
+    }
   </style>
 </head>
 <body>
 <div class="container">
   <div class="card full-width">
-    <h1>🔌 WebSocket Tester – with Receive Panel</h1>
+    <h1>🔌 WebSocket Tester – Client ID & Rooms</h1>
     <div id="status" class="status disconnected">⚫ Disconnected</div>
     <div class="flex-row">
       <label>URL:</label>
@@ -112,19 +119,31 @@
     </div>
     <div class="flex-row">
       <label>JSON:</label>
-      <input type="text" id="jsonMsg" value='{"type":"ping"}' style="flex: 2;">
+      <input type="text" id="jsonMsg" value='{"message":"hello"}' style="flex: 2;">
       <button id="sendJsonBtn" disabled>Send JSON</button>
     </div>
+    <hr>
+    <h3>🏷️ Client ID</h3>
     <div class="flex-row">
-      <label>Room:</label>
-      <input type="text" id="roomName" placeholder="room_id" style="flex: 1;">
+      <label>Client ID:</label>
+      <input type="text" id="clientId" placeholder="e.g., user123" style="flex: 1;">
+      <button id="setClientIdBtn" disabled>Set Client ID</button>
+    </div>
+    <hr>
+    <h3>📡 Room Control</h3>
+    <div class="flex-row">
+      <label>Room name:</label>
+      <input type="text" id="roomName" placeholder="e.g., general" style="flex: 1;">
       <button id="joinRoomBtn" disabled>Join Room</button>
       <button id="leaveRoomBtn" disabled>Leave Room</button>
+    </div>
+    <div class="small-note">
+      💡 Send Json with {"room":"room name"} to send message in room
     </div>
   </div>
 
   <div class="card">
-    <h2>📥 Received Messages <span style="font-size:0.8rem; font-weight:normal;">(only incoming data)</span></h2>
+    <h2>📥 Received Messages</h2>
     <div id="receivedBox" class="message-box">
       <div style="color:#6c757d;">No messages received yet...</div>
     </div>
@@ -150,9 +169,11 @@
   const sendJsonBtn = document.getElementById('sendJsonBtn');
   const joinRoomBtn = document.getElementById('joinRoomBtn');
   const leaveRoomBtn = document.getElementById('leaveRoomBtn');
+  const setClientIdBtn = document.getElementById('setClientIdBtn');
   const textMsgInput = document.getElementById('textMsg');
   const jsonMsgInput = document.getElementById('jsonMsg');
   const roomNameInput = document.getElementById('roomName');
+  const clientIdInput = document.getElementById('clientId');
   const receivedBox = document.getElementById('receivedBox');
   const logBox = document.getElementById('logBox');
 
@@ -166,15 +187,15 @@
   }
 
   function addReceived(data) {
+    // Remove placeholder if it's the only child and contains the placeholder text
+    if (receivedBox.children.length === 1 && receivedBox.children[0].innerText.includes('No messages received')) {
+      receivedBox.innerHTML = '';
+    }
     const div = document.createElement('div');
     div.className = 'received-item';
     div.innerHTML = `<strong>📥 ${new Date().toLocaleTimeString()}</strong><br><pre style="margin:0; white-space:pre-wrap;">${escapeHtml(data)}</pre>`;
     receivedBox.appendChild(div);
     receivedBox.scrollTop = receivedBox.scrollHeight;
-    // remove placeholder if exists
-    if (receivedBox.children.length === 1 && receivedBox.children[0].innerText.includes('No messages received')) {
-      receivedBox.innerHTML = '';
-    }
   }
 
   function escapeHtml(str) {
@@ -196,6 +217,7 @@
       sendJsonBtn.disabled = false;
       joinRoomBtn.disabled = false;
       leaveRoomBtn.disabled = false;
+      setClientIdBtn.disabled = false;
       wsUrlInput.disabled = true;
     } else {
       statusDiv.className = 'status disconnected';
@@ -206,6 +228,7 @@
       sendJsonBtn.disabled = true;
       joinRoomBtn.disabled = true;
       leaveRoomBtn.disabled = true;
+      setClientIdBtn.disabled = true;
       wsUrlInput.disabled = false;
     }
   }
@@ -233,7 +256,7 @@
       };
       socket.onmessage = (event) => {
         let data = event.data;
-        // try to pretty-print JSON
+        // Try to pretty-print JSON for display
         try {
           let parsed = JSON.parse(data);
           data = JSON.stringify(parsed, null, 2);
@@ -297,34 +320,45 @@
     }
   }
 
+  // Send a command message as JSON with action and parameter
+  function sendCommand(action, key, value) {
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+      addLog('Not connected', true);
+      return;
+    }
+    const payload = { action: action };
+    payload[key] = value;
+    const msg = JSON.stringify(payload);
+    socket.send(msg);
+    addLog(`Command: ${action} ${key}=${value}`);
+  }
+
+  function setClientId() {
+    let clientId = clientIdInput.value.trim();
+    if (!clientId) {
+      addLog('Please enter a client ID', true);
+      return;
+    }
+    sendCommand('set', 'clientId', clientId);
+    clientIdInput.value = '';
+  }
+
   function joinRoom() {
     let room = roomNameInput.value.trim();
     if (!room) {
-      addLog('Enter room name', true);
+      addLog('Please enter a room name', true);
       return;
     }
-    // This assumes your FastAPI module expects a command like { "action": "join", "room": room }
-    // Adjust according to your actual API.
-    sendCustomCommand('join', room);
+    sendCommand('join', 'room', room);
   }
 
   function leaveRoom() {
     let room = roomNameInput.value.trim();
     if (!room) {
-      addLog('Enter room name', true);
+      addLog('Please enter a room name', true);
       return;
     }
-    sendCustomCommand('leave', room);
-  }
-
-  function sendCustomCommand(action, room) {
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
-      addLog('Not connected', true);
-      return;
-    }
-    const msg = JSON.stringify({ action: action, room: room });
-    socket.send(msg);
-    addLog(`Sent ${action} room: ${room}`);
+    sendCommand('leave', 'room', room);
   }
 
   // Event listeners
@@ -334,6 +368,7 @@
   sendJsonBtn.addEventListener('click', sendJson);
   joinRoomBtn.addEventListener('click', joinRoom);
   leaveRoomBtn.addEventListener('click', leaveRoom);
+  setClientIdBtn.addEventListener('click', setClientId);
 </script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket
 from fastapi.responses import HTMLResponse
 from pathlib import Path
 import uvicorn
@@ -20,11 +20,23 @@ async def index():
 #   print("New connection established!")
 
 @app.websocket("/ws")
-@ws.endpoint
-async def onMessage(data:str):
+@ws.endpoint(mode="dict")
+async def onMessage(data:dict, websocket:WebSocket):
+  if "room" in data:
+    if "action" in data:
+      if data["action"] == "join":
+        connectionManager.add_connection_to_room(websocket, data["room"])
+      elif data["action"] == "leave":
+        connectionManager.remove_connection_from_room(websocket, data["room"])
+    await connectionManager.send_message_to_room(data, data["room"])
+  elif "clientId" in data:
+    if "action" in data:
+      if data["action"] == "set":
+        await connectionManager.set_client_id(websocket, data["clientId"])
+    await connectionManager.send_message_to_client_id(data, data["clientId"])
+  else:
+    await connectionManager.broadcast(data)
   print(data)
-  print(connectionManager)
-  await connectionManager.broadcast(data)
 
 if __name__ == "__main__":
   uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

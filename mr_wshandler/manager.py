@@ -20,11 +20,13 @@ class ConnectionManager:
     for connection in self.active_connections:
       if connection.websocket is websocket:
         connection.clientId = clientId
+        break
 
   async def disconnect(self, websocket:WebSocket):
     for connection in self.active_connections:
       if connection.websocket is websocket:
         self.active_connections.remove(connection)
+        break
 
   async def send_message(self, message:str|bytes|dict, websocket:WebSocket):
     if type(message) == str:
@@ -42,6 +44,38 @@ class ConnectionManager:
   async def send_message_to_client_id(self, message:str|bytes|dict, clientId:int|str):
     for connection in self.active_connections:
       if connection.clientId == clientId:
+        await self.send_message(message, connection.websocket)
+        break
+
+  def add_client_id_to_room(self, clientId:int|str, room:str):
+    for connection in self.active_connections:
+      if connection == clientId:
+        if not room in connection.rooms:
+          connection.rooms.append(room)
+        break
+
+  def remove_client_id_from_room(self, clientId:int|str, room:str):
+    for connection in self.active_connections:
+      if connection == clientId:
+        connection.rooms.remove(room)
+        break
+
+  def add_connection_to_room(self, websocket:WebSocket, room:str):
+    for connection in self.active_connections:
+      if connection.websocket is websocket:
+        if not room in connection.rooms:
+          connection.rooms.append(room)
+        break
+
+  def remove_connection_from_room(self, websocket:WebSocket, room:str):
+    for connection in self.active_connections:
+      if connection.websocket is websocket:
+        connection.rooms.remove(room)
+        break
+
+  async def send_message_to_room(self, message:str|bytes|dict, room:str):
+    for connection in self.active_connections:
+      if room in connection.rooms:
         await self.send_message(message, connection.websocket)
 
   async def broadcast(self, message:str|bytes|dict):
