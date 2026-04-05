@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mr-fastapi-wshandler"
+version = "0.1.0"
+description = "A lightweight WebSocket handler for FastAPI with connection management, rooms, and client ID routing"
+readme = "README.md"
+authors = [{name = "Moeez Raza"}]
+license = {text = "MIT"}
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+dependencies = [
+  "fastapi>=0.100.0",
+  "websockets>=12.0",
+]
+requires-python = ">=3.9"
+
+[project.urls]
+"Homepage" = "https://github.com/YOUR_USERNAME/mr_fastapi_wshandler"
+"Bug Reports" = "https://github.com/YOUR_USERNAME/mr_fastapi_wshandler/issues"

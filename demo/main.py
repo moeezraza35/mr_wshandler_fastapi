@@ -15,9 +15,13 @@ async def index():
   file = open("demo/index.html", "rb")
   return HTMLResponse(file.read())
 
-# @connectionManager.set_onopen
-# def onopen():
-#   print("New connection established!")
+@ws.set_onopen
+async def onopen(connection):
+  print("New connection established!", connection)
+
+@ws.set_onclose
+async def onclose(connection):
+  print("Connection closed!", connection)
 
 @app.websocket("/ws")
 @ws.endpoint(mode="dict")
