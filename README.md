@@ -25,7 +25,7 @@ The goal of this project is to make using WebSockets in FastAPI **easier, simple
 ## 📦 Installation
 
 ```bash
-pip install mr_wshandler_fastapi
+pip install mr-wshandler-fastapi
 ```
 Or install directly from GitHub:
 ```bash
@@ -36,8 +36,8 @@ pip install git+https://github.com/moeezraza35/mr_wshandler_fastapi.git
 Clone the repository and run the included demo server:
 
 ```bash
-git clone https://github.com/your-username/mr_fastapi_wshandler.git
-cd mr_fastapi_wshandler
+git clone https://github.com/your-username/mr_wshandler_fastapi.git
+cd mr_wshandler_fastapi
 python -m venv venv
 source venv/bin/activate  # or venv\Scripts\activate on Windows
 pip install -r requirements.txt
@@ -147,7 +147,7 @@ Then open http://localhost:8000 in your browser. The HTML test client lets you c
 ## 🤝 Contributing
 Contributions, bug reports, and feature requests are warmly welcome! Feel free to open issues or submit pull requests.
 
-If you fork this repository, please include a note in your `README` or `documentation` that your project is based on `mr_wshandler_fastapi` by Moeez Raza. A simple line like _"Originally forked from mr_fastapi_wshandler by Moeez Raza"_ is appreciated.
+If you fork this repository, please include a note in your `README` or `documentation` that your project is based on `mr_wshandler_fastapi` by Moeez Raza. A simple line like _"Originally forked from mr_wshandler_fastapi by Moeez Raza"_ is appreciated.
 
 ## 📄 License
 This project is licensed under the MIT License – see the [LICENSE.md](LICENSE.md) file for details.
